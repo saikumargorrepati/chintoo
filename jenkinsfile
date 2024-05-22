@@ -1,0 +1,31 @@
+pipeline {
+    agent any
+    environment {
+        DOCKER_IMAGE_NAME = "project_image"
+        SSH_KEY = credentials('LaptopKey')
+        DOCKERHUB_CREDENTIALS = credentials('docker-creds')
+        DOCKER_REPOSITORY = "saikuamarg"
+        DOCKER_ACCOUNT  ="saikuamarg"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+            git branch: 'master', url:'https://github.com/saikumargorrepati/chintoo.git'
+            }
+        }
+        stage('Docker Image Build-Tag-Push') {
+            steps {
+                sh "sudo docker build -t ${env.DOCKER_ACCOUNT}/${DOCKER_REPOSITORY}:test-${BUILD_NUMBER}.0 ."
+                sh "echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin"
+                sh "sudo docker push ${env.DOCKER_ACCOUNT}/${DOCKER_REPOSITORY}:test-${BUILD_NUMBER}.0"
+                }
+        }
+
+        stage('Deploy Docker Image') {
+            steps { 
+                sh "sudo docker run --rm -dit --name revestassignment -p 8000:8081 saikuamarg/saikuamarg:test-23.0"
+            }
+        } 
+    }
+    }
